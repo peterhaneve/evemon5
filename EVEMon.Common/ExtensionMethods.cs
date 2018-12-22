@@ -8,6 +8,16 @@ namespace EVEMon.Common {
 	/// Extension methods to perform common tasks on system types which cannot be inherited.
 	/// </summary>
 	public static class ExtensionMethods {
+		/// <summary>
+		/// Used for Roman numeral conversion.
+		/// </summary>
+		private static readonly string[,] ROMAN_NUMERALS = {
+			{ "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" }, // ones
+			{ "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" }, // tens
+			{ "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM" }, // hundreds
+			{ "", "M", "MM", "MMM", "", "", "", "", "", "" } // thousands
+		};
+
 		#region Number
 
 		/// <summary>
@@ -22,6 +32,24 @@ namespace EVEMon.Common {
 		}
 
 		/// <summary>
+		/// Checks to see if a floating point number has a degenerate (usually invalid) value.
+		/// </summary>
+		/// <param name="value">The value to check.</param>
+		/// <returns>true if the value is NaN or infinity, or false otherwise</returns>
+		public static bool IsNaNOrInfinity(this float value) {
+			return float.IsNaN(value) || float.IsInfinity(value);
+		}
+
+		/// <summary>
+		/// Checks to see if a floating point number has a degenerate (usually invalid) value.
+		/// </summary>
+		/// <param name="value">The value to check.</param>
+		/// <returns>true if the value is NaN or infinity, or false otherwise</returns>
+		public static bool IsNaNOrInfinity(this double value) {
+			return double.IsNaN(value) || double.IsInfinity(value);
+		}
+
+		/// <summary>
 		/// Pluralizes a string as necessary.
 		/// </summary>
 		/// <param name="value">The value which will be displayed.</param>
@@ -29,7 +57,7 @@ namespace EVEMon.Common {
 		public static string S(this int value) => (value > 1) ? "s" : string.Empty;
 
 		/// <summary>
-		/// Convert an integer to a string with the specified decimals.
+		/// Converts an integer to a string with the specified decimals.
 		/// </summary>
 		/// <param name="number">The number.</param>
 		/// <param name="decimals">The number of decimals.</param>
@@ -39,7 +67,7 @@ namespace EVEMon.Common {
 			CultureInfo culture = null) => ToNumericString((long)number, decimals, culture);
 
 		/// <summary>
-		/// Convert a floating point number to a string with the specified decimals.
+		/// Converts a floating point number to a string with the specified decimals.
 		/// </summary>
 		/// <param name="number">The number.</param>
 		/// <param name="decimals">The number of decimals.</param>
@@ -49,7 +77,7 @@ namespace EVEMon.Common {
 			CultureInfo culture = null) => ToNumericString((double)number, decimals, culture);
 
 		/// <summary>
-		/// Convert a decimal number to a string with the specified decimals.
+		/// Converts a decimal number to a string with the specified decimals.
 		/// </summary>
 		/// <param name="number">The number.</param>
 		/// <param name="decimals">The number of decimals.</param>
@@ -60,7 +88,7 @@ namespace EVEMon.Common {
 				culture ?? CultureInfo.CurrentCulture);
 
 		/// <summary>
-		/// Convert a long integer to a string with the specified decimals.
+		/// Converts a long integer to a string with the specified decimals.
 		/// </summary>
 		/// <param name="number">The number.</param>
 		/// <param name="decimals">The number of decimals.</param>
@@ -71,7 +99,7 @@ namespace EVEMon.Common {
 				culture ?? CultureInfo.CurrentCulture);
 
 		/// <summary>
-		/// Convert a floating point number to a string with the specified decimals.
+		/// Converts a floating point number to a string with the specified decimals.
 		/// </summary>
 		/// <param name="number">The number.</param>
 		/// <param name="decimals">The number of decimals.</param>
@@ -80,6 +108,30 @@ namespace EVEMon.Common {
 		public static string ToNumericString(this double number, int decimals,
 			CultureInfo culture = null) => number.ToString(GetNumericFormatString(decimals),
 				culture ?? CultureInfo.CurrentCulture);
+
+		/// <summary>
+		/// Converts an integer to Roman numerals.
+		/// </summary>
+		/// <param name="number">The number to convert from 0 to 3999. 0 will return an empty string.</param>
+		/// <returns>The Roman representation of the number.</returns>
+		public static string ToRomanString(this int number) => ToRomanString((long)number);
+
+		/// <summary>
+		/// Converts an integer to Roman numerals.
+		/// </summary>
+		/// <param name="number">The number to convert from 0 to 3999. 0 will return an empty string.</param>
+		/// <returns>The Roman representation of the number.</returns>
+		public static string ToRomanString(this long number) {
+			if (number > 3999L || number < 0L)
+				throw new ArgumentOutOfRangeException("number");
+			// Worst case: 15 characters (MMMDCCCLXXXVIII)
+			var roman = new StringBuilder(16);
+			string numStr = number.ToString(CultureInfo.InvariantCulture);
+			int len = numStr.Length;
+			foreach (char digit in numStr)
+				roman.Append(ROMAN_NUMERALS[--len, digit - '0']);
+			return roman.ToString();
+		}
 
 		#endregion
 
@@ -96,6 +148,16 @@ namespace EVEMon.Common {
 			source.ThrowIfNull(nameof(source));
 			return source.IndexOf(text, ignoreCase ? StringComparison.OrdinalIgnoreCase :
 				StringComparison.Ordinal) >= 0;
+		}
+
+		/// <summary>
+		/// Formats data according to a supplied format string.
+		/// </summary>
+		/// <param name="format">The format string describing the format for each argument.</param>
+		/// <param name="args">The arguments to format.</param>
+		/// <returns>The formatted data.</returns>
+		public static string F(this string format, params object[] args) {
+			return string.Format(CultureInfo.CurrentCulture, format, args);
 		}
 
 		/// <summary>
