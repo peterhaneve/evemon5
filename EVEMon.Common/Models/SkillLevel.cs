@@ -14,8 +14,32 @@ namespace EVEMon.Common.Models {
 		/// Number of SP required for each level of a rank 1 skill.
 		/// </summary>
 		private static readonly double[] BASE_SP = {
-			250.0, 1000.0 * Math.Sqrt(2.0), 8000.0, 32000.0 * Math.Sqrt(2.0), 256000.0
+			0.0, 250.0, 1000.0 * Math.Sqrt(2.0), 8000.0, 32000.0 * Math.Sqrt(2.0), 256000.0
 		};
+
+		/// <summary>
+		/// Calculates the skill level which is effective given the number of skill points
+		/// trained in this skill.
+		/// </summary>
+		/// <param name="skill">The skill which has been trained.</param>
+		/// <param name="sp">The number of skill points in this skill.</param>
+		/// <returns>The skill level which has been acquired.</returns>
+		public static SkillLevel FromSkillPoints(Skill skill, int sp) {
+			int level = MAX_LEVEL;
+			skill.ThrowIfNull(nameof(skill));
+			if (sp < 0)
+				throw new ArgumentOutOfRangeException("sp");
+			double mult = skill.TrainingTimeMultiplier;
+			for (int i = 0; i <= MAX_LEVEL; i++) {
+				int spRequired = (int)Math.Ceiling(mult * BASE_SP[i]);
+				if (sp < spRequired) {
+					// Skill is not trained to this level
+					level = i;
+					break;
+				}
+			}
+			return new SkillLevel(skill, level);
+		}
 
 		/// <summary>
 		/// The skill which is trained to a level.
@@ -33,8 +57,7 @@ namespace EVEMon.Common.Models {
 		public int SkillPoints {
 			get {
 				// No square roots at runtime, not off by 1 SP, better for all!
-				double baseSP = (Level > 0) ? BASE_SP[Level - 1] : 0.0;
-				return (int)Math.Ceiling(BaseSkill.TrainingTimeMultiplier * baseSP);
+				return (int)Math.Ceiling(BaseSkill.TrainingTimeMultiplier * BASE_SP[Level]);
 			}
 		}
 
@@ -44,6 +67,15 @@ namespace EVEMon.Common.Models {
 				throw new ArgumentOutOfRangeException("level");
 			BaseSkill = skill;
 			Level = level;
+		}
+
+		/// <summary>
+		/// Creates a TrainedSkill instance trained to exactly this skill level.
+		/// </summary>
+		/// <returns>A TrainedSkill instance with the number of SP required to train this
+		/// skill level.</returns>
+		public TrainedSkill AsTrainedSkill() {
+			return new TrainedSkill(BaseSkill, Level, SkillPoints);
 		}
 
 		public override bool Equals(object obj) {

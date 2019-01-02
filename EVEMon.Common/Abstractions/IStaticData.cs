@@ -1,13 +1,19 @@
 ﻿using EVEMon.Common.Models;
-using System;
-using System.Collections.Generic;
+using EVEMon.Common.StaticData;
 
-namespace EVEMon.Common.StaticData {
+namespace EVEMon.Common.Abstractions {
 	/// <summary>
 	/// Abstract parent of a static data repository. Static data can be loaded from files or
 	/// "live" from TQ/SiSi, so this abstraction is used for both.
 	/// </summary>
-	public interface IStaticDataBase {
+	public interface IStaticData {
+		/// <summary>
+		/// Retrieves an NPC (static) corporation by its ID.
+		/// </summary>
+		/// <param name="id">The corporation ID.</param>
+		/// <returns>The matching NPC corporation, or null if no corporation with this ID is present in the static data.</returns>
+		Corporation GetNPCCorpByID(long id);
+
 		/// <summary>
 		/// Retrieves a planet by its ID.
 		/// </summary>

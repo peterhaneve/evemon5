@@ -8,6 +8,11 @@ namespace EVEMon.Common.StaticData {
 	/// </summary>
 	public sealed class Region : IHasID, IHasName {
 		/// <summary>
+		/// Used when a region is unknown.
+		/// </summary>
+		public static readonly Region UNKNOWN_REGION = new Region(0L, Constants.UNKNOWN_TEXT);
+
+		/// <summary>
 		/// The region ID.
 		/// </summary>
 		public long ID { get; }
@@ -20,7 +25,15 @@ namespace EVEMon.Common.StaticData {
 		/// <summary>
 		/// The solar systems in this region.
 		/// </summary>
-		public IReadOnlyDictionary<int, SolarSystem> SolarSystems { get; }
+		public IDictionary<int, SolarSystem> SolarSystems { get; }
+
+		public Region(long id, string name) {
+			if (string.IsNullOrEmpty(name))
+				throw new ArgumentNullException("name");
+			ID = id;
+			Name = name;
+			SolarSystems = new Dictionary<int, SolarSystem>(64);
+		}
 
 		public override bool Equals(object obj) {
 			return obj is Region other && other.ID == ID;

@@ -1,5 +1,4 @@
 ﻿using EVEMon.Common.Models;
-using System;
 using System.Collections.Generic;
 
 namespace EVEMon.Common.StaticData {
@@ -7,6 +6,12 @@ namespace EVEMon.Common.StaticData {
 	/// Represents a solar system in EVE.
 	/// </summary>
 	public class SolarSystem : IHasID, IHasPosition, IHasName {
+		/// <summary>
+		/// Used for unknown locations.
+		/// </summary>
+		public static readonly SolarSystem UNKNOWN_LOCATION = new SolarSystemFactory(0L,
+			"Unknown Location", Region.UNKNOWN_REGION).Build();
+
 		/// <summary>
 		/// The solar system ID.
 		/// </summary>
@@ -52,6 +57,18 @@ namespace EVEMon.Common.StaticData {
 		/// but dynamically created solar system overlays might include player structures.
 		/// </summary>
 		public IList<Structure> Structures { get; }
+
+		internal SolarSystem(SolarSystemFactory factory) {
+			ID = factory.ID;
+			Name = factory.Name;
+			Position = factory.Position;
+			Radius = factory.Radius;
+			Region = factory.Region;
+			SecurityStatus = factory.SecurityStatus;
+			Planets = new List<Planet>(16);
+			Stargates = new List<Stargate>(8);
+			Structures = new List<Structure>(16);
+		}
 
 		public override bool Equals(object obj) {
 			return obj is SolarSystem other && other.ID == ID;
