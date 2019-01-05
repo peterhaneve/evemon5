@@ -1,5 +1,5 @@
-﻿using EVEMon.Common.Models;
-using EVEMon.Common.StaticData;
+﻿using EVEMon.Common.Events;
+using EVEMon.Common.Models;
 using System;
 using System.Collections.Generic;
 
@@ -15,6 +15,11 @@ namespace EVEMon.Common.Abstractions {
 		ICollection<Character> Characters { get; }
 
 		/// <summary>
+		/// Retrieves the event hub.
+		/// </summary>
+		EveMonEvents Events { get; }
+
+		/// <summary>
 		/// Retrieves the notification center.
 		/// </summary>
 		IEveMonNotifications Notifications { get; }
@@ -23,6 +28,6 @@ namespace EVEMon.Common.Abstractions {
 		/// The static data loaded from file. Additional static data instances may be created
 		/// during execution.
 		/// </summary>
-		IStaticDataBase StaticData { get; }
+		IStaticData StaticData { get; }
 	}
 }
