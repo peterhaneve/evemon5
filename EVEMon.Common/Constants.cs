@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace EVEMon.Common {
 	/// <summary>
@@ -11,5 +10,16 @@ namespace EVEMon.Common {
 		/// be found for any other reason.
 		/// </summary>
 		public const string UNKNOWN_TEXT = "Unknown";
+
+		#region EVE Attributes
+
+		// Attribute bonuses from implants
+		public const int ATTR_CHARISMA_BONUS = 175;
+		public const int ATTR_INTELLIGENCE_BONUS = 176;
+		public const int ATTR_MEMORY_BONUS = 177;
+		public const int ATTR_PERCEPTION_BONUS = 178;
+		public const int ATTR_WILLPOWER_BONUS = 179;
+
+		#endregion
 	}
 }

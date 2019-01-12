@@ -41,15 +41,15 @@ namespace EVEMon.Common.Models {
 		public int Willpower { get; }
 
 		public CharacterAttributes(int c, int i, int m, int p, int w) {
-			if (c < MIN_ATTRIB)
+			if (c <= 0)
 				throw new ArgumentOutOfRangeException("charisma");
-			if (i < MIN_ATTRIB)
+			if (i <= 0)
 				throw new ArgumentOutOfRangeException("intelligence");
-			if (m < MIN_ATTRIB)
+			if (m <= 0)
 				throw new ArgumentOutOfRangeException("memory");
-			if (p < MIN_ATTRIB)
+			if (p <= 0)
 				throw new ArgumentOutOfRangeException("perception");
-			if (w < MIN_ATTRIB)
+			if (w <= 0)
 				throw new ArgumentOutOfRangeException("willpower");
 			// Implants/boosters can adjust attributes past the max, do not check it here
 			Charisma = c;
@@ -75,6 +75,23 @@ namespace EVEMon.Common.Models {
 		public override string ToString() {
 			return "c{0:D} i{1:D} m{2:D} p{3:D} w{4:D}".F(Charisma, Intelligence, Memory,
 				Perception, Willpower);
+		}
+
+		/// <summary>
+		/// Creates a copy of these character attributes with the bonus from an implant added
+		/// to them.
+		/// </summary>
+		/// <param name="implant">The implant to add.</param>
+		/// <returns>A copy of these character attributes with the implant's attribute bonus applied.</returns>
+		public CharacterAttributes WithImplantBonus(Item implant) {
+			implant.ThrowIfNull(nameof(implant));
+			int bonusC = (int)(implant[Constants.ATTR_CHARISMA_BONUS] ?? 0.0);
+			int bonusI = (int)(implant[Constants.ATTR_INTELLIGENCE_BONUS] ?? 0.0);
+			int bonusM = (int)(implant[Constants.ATTR_MEMORY_BONUS] ?? 0.0);
+			int bonusP = (int)(implant[Constants.ATTR_PERCEPTION_BONUS] ?? 0.0);
+			int bonusW = (int)(implant[Constants.ATTR_WILLPOWER_BONUS] ?? 0.0);
+			return new CharacterAttributes(Charisma + bonusC, Intelligence + bonusI, Memory +
+				bonusM, Perception + bonusP, Willpower + bonusW);
 		}
 	}
 }

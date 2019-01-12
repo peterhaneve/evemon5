@@ -7,5 +7,8 @@ namespace EVEMon.Common.Models {
 	/// context where it is used. This extension is intended for unpackaged and active items.
 	/// </summary>
 	public class DogmaItem : Item {
+		public DogmaItem(Item baseType) : base(baseType.ID, baseType.Name, baseType.Volume) {
+
+		}
 	}
 }

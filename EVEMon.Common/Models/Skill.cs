@@ -32,5 +32,9 @@ namespace EVEMon.Common.Models {
 		/// The multiplier which makes this skill harder or easier to train.
 		/// </summary>
 		public double TrainingTimeMultiplier { get; }
+
+		public Skill(Item item) : base(item.ID, item.Name, item.Volume) {
+
+		}
 	}
 }

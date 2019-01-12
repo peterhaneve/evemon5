@@ -3,8 +3,8 @@ using System;
 
 namespace EVEMon.Common.Events {
 	/// <summary>
-	/// Describes how EVEMon passes events to consumers. Most UI systems are single-threaded,
-	/// so these events may need to be raised on the UI thread.
+	/// Passes events to EVEMon consumers. Most UI systems are single-threaded, so these
+	/// events may need to be raised on the UI thread.
 	/// </summary>
 	public sealed class EveMonEvents {
 		#region Character List Events
