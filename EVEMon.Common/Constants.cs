@@ -11,6 +11,11 @@ namespace EVEMon.Common {
 		/// </summary>
 		public const string UNKNOWN_TEXT = "Unknown";
 
+		/// <summary>
+		/// The user agent to be used when an ESI request is performed.
+		/// </summary>
+		public const string USER_AGENT = "EVEMon 5";
+
 		#region EVE Attributes
 
 		// Attribute bonuses from implants

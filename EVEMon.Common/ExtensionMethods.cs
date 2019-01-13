@@ -294,5 +294,6 @@ namespace EVEMon.Common {
 				throw new ArgumentNullException(paramName, message ?? "Value cannot be null.");
 		}
 		#endregion
+		
 	}
 }

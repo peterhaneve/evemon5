@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http.Headers;
 
 namespace EVEMon.Common.Esi {
 	/// <summary>
@@ -27,6 +28,16 @@ namespace EVEMon.Common.Esi {
 		public EsiCacheInfo(string etag, DateTime expires) {
 			ETag = etag;
 			Expires = expires;
+		}
+
+		/// <summary>
+		/// Adds this cached result information to the HTTP request headers.
+		/// </summary>
+		/// <param name="headers">The headers where the data should be added.</param>
+		public void AddRequestHeaders(HttpRequestHeaders headers) {
+			headers.IfModifiedSince = Expires;
+			if (!string.IsNullOrEmpty(ETag))
+				headers.IfNoneMatch.TryParseAdd(ETag);
 		}
 
 		public override bool Equals(object obj) {

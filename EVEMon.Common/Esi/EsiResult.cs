@@ -23,6 +23,11 @@ namespace EVEMon.Common.Esi {
 		public T Result { get; }
 
 		/// <summary>
+		/// The time on the ESI server, in UTC.
+		/// </summary>
+		public DateTime ServerTime { get; set; }
+
+		/// <summary>
 		/// The result status.
 		/// </summary>
 		public EsiResultStatus Status { get; }
@@ -31,6 +36,7 @@ namespace EVEMon.Common.Esi {
 			Status = status;
 			Result = result;
 			Exception = e;
+			ServerTime = DateTime.UtcNow;
 		}
 
 		public override string ToString() {
