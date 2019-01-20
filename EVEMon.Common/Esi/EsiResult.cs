@@ -18,6 +18,11 @@ namespace EVEMon.Common.Esi {
 		public Exception Exception { get; }
 
 		/// <summary>
+		/// The number of pages in the data. Defaults to 1.
+		/// </summary>
+		public int Pages { get; set; }
+
+		/// <summary>
 		/// The result data. Can be default(T) if the request failed, see Status.
 		/// </summary>
 		public T Result { get; }
@@ -36,6 +41,7 @@ namespace EVEMon.Common.Esi {
 			Status = status;
 			Result = result;
 			Exception = e;
+			Pages = 1;
 			ServerTime = DateTime.UtcNow;
 		}
 

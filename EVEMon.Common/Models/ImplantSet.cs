@@ -6,7 +6,7 @@ namespace EVEMon.Common.Models {
 	/// Represents a clone with a set of implants. The dictionary maps the slot number to the
 	/// implant item type.
 	/// </summary>
-	public class ImplantSet : Dictionary<int, Item>, IHasID, IHasName {
+	public class ImplantSet : Dictionary<int, ItemType>, IHasID, IHasName {
 		/// <summary>
 		/// The jump clone ID (if obtained from CCP).
 		/// </summary>

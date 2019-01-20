@@ -1,42 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace EVEMon.Common.Models {
 	/// <summary>
-	/// Stores basic information about an item in EVE. This only includes the basics about an
-	/// item, with no stack count or calculated attributes. Uses of this concrete class are
-	/// intended as unpackaged or reference items only - assembled and active items (such as
-	/// modules on a ship) are likely instances of DogmaItem. For packaged items, ID == TypeID.
+	/// Stores information about a particular item in EVE.
 	/// </summary>
-	public class Item : IHasID, IHasName {
+	public sealed class Item : IHasID, IHasName {
 		/// <summary>
 		/// An item used to represent unknown Item IDs.
 		/// </summary>
-		public static readonly Item UNKNOWN_ITEM = new Item(0L, Constants.UNKNOWN_TEXT) {
-			Frozen = true
-		};
+		public static readonly Item UNKNOWN_ITEM = new Item(0L, ItemType.UNKNOWN_TYPE);
 
 		/// <summary>
-		/// Whether this item's attribute table is unmodifiable.
+		/// The item's type ID.
 		/// </summary>
-		public bool Frozen { get; private set; }
-
-		/// <summary>
-		/// Retrieves the value of an attribute.
-		/// </summary>
-		/// <param name="attr">The attribute ID.</param>
-		/// <returns>The attribute value.</returns>
-		public double? this[int attr] {
-			get {
-				return attributes.TryGetValue(attr, out double av) ? (double?)av : null;
-			}
-			set {
-				if (Frozen)
-					throw new InvalidOperationException("Item is frozen");
-				if (value != null)
-					attributes[attr] = (double)value;
-			}
-		}
+		public ItemType ItemType { get; }
 
 		/// <summary>
 		/// The item ID. Equal to Type ID for items representing base types.
@@ -46,30 +23,36 @@ namespace EVEMon.Common.Models {
 		/// <summary>
 		/// The item name.
 		/// </summary>
-		public string Name { get; }
+		public string Name {
+			get {
+				return ItemType.Name;
+			}
+		}
 
 		/// <summary>
-		/// The item's type ID.
+		/// Retrieves the value of an attribute.
 		/// </summary>
-		public int TypeID { get; }
+		/// <param name="attr">The attribute ID.</param>
+		/// <returns>The attribute value.</returns>
+		public double? this[int attr] {
+			get {
+				return ItemType[attr];
+			}
+		}
 
 		/// <summary>
 		/// The item volume in cubic meters.
 		/// </summary>
-		public decimal Volume { get; }
+		public decimal Volume {
+			get {
+				return ItemType.Volume;
+			}
+		}
 
-		private readonly IDictionary<int, double> attributes;
-
-		public Item(long id, string name, decimal volume = 1.0m) {
-			if (volume < 0m)
-				throw new ArgumentOutOfRangeException("volume");
-			if (string.IsNullOrEmpty(name))
-				name = Constants.UNKNOWN_TEXT;
-			attributes = new Dictionary<int, double>(64);
-			Frozen = false;
+		public Item(long id, ItemType type) {
+			type.ThrowIfNull(nameof(type));
 			ID = id;
-			Name = name;
-			Volume = volume;
+			ItemType = type;
 		}
 
 		public override bool Equals(object obj) {

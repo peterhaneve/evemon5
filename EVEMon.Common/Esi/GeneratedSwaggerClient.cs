@@ -17287,41 +17287,6 @@ namespace EVEMon.Common.Esi
             DateTimeFormat = "yyyy-MM-dd";
         }
     }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "12.0.11.0 (NJsonSchema v9.13.13.0 (Newtonsoft.Json v11.0.0.0))")]
-    public partial class EsiException : System.Exception
-    {
-        public int StatusCode { get; private set; }
-
-        public string Response { get; private set; }
-
-        public System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
-
-        public EsiException(string message, int statusCode, string response, System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Exception innerException)
-            : base(message + "\n\nStatus: " + statusCode + "\nResponse: \n" + response.Substring(0, response.Length >= 512 ? 512 : response.Length), innerException)
-        {
-            StatusCode = statusCode;
-            Response = response;
-            Headers = headers;
-        }
-
-        public override string ToString()
-        {
-            return string.Format("HTTP Response: \n\n{0}\n\n{1}", Response, base.ToString());
-        }
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "12.0.11.0 (NJsonSchema v9.13.13.0 (Newtonsoft.Json v11.0.0.0))")]
-    public partial class EsiException<TResult> : EsiException
-    {
-        public TResult Result { get; private set; }
-
-        public EsiException(string message, int statusCode, string response, System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>> headers, TResult result, System.Exception innerException)
-            : base(message, statusCode, response, headers, innerException)
-        {
-            Result = result;
-        }
-    }
-
+	
     #pragma warning restore
 }

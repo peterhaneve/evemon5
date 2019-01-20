@@ -7,12 +7,7 @@ namespace EVEMon.Common.Models {
 	/// class extends Item and adds convenience accessors for the multiplier, requirements,
 	/// attributes, and other commonly used skill information.
 	/// </summary>
-	public class Skill : Item {
-		/// <summary>
-		/// The maximum level of this skill which can be trained as an Alpha clone.
-		/// </summary>
-		public int MaxAlphaLevel { get; }
-
+	public class Skill : ItemType {
 		/// <summary>
 		/// The prerequisites required to train this skill.
 		/// </summary>
@@ -33,8 +28,20 @@ namespace EVEMon.Common.Models {
 		/// </summary>
 		public double TrainingTimeMultiplier { get; }
 
-		public Skill(Item item) : base(item.ID, item.Name, item.Volume) {
+		public Skill(ItemType item) : base(item.TypeID, item.Name, item.Volume) {
+			Freeze();
+		}
 
+		/// <summary>
+		/// Gets the maximum level to which this skill can be trained.
+		/// </summary>
+		/// <param name="cloneState">The clone state which is training the skill.</param>
+		/// <returns>The maximum level to which this skill can be trained.</returns>
+		public SkillLevel GetMaximumLevel(CloneState cloneState) {
+			cloneState.ThrowIfNull(nameof(cloneState));
+			var maxLevel = cloneState.MaximumTraining[TypeID];
+			return (maxLevel == null) ? new SkillLevel(this, SkillLevel.MAX_LEVEL) : maxLevel.
+				EffectiveLevel;
 		}
 	}
 }

@@ -293,6 +293,7 @@ namespace EVEMon.Common {
 			if (obj == null)
 				throw new ArgumentNullException(paramName, message ?? "Value cannot be null.");
 		}
+
 		#endregion
 		
 	}

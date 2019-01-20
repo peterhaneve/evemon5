@@ -167,8 +167,9 @@ namespace EVEMon.Common.Esi {
 			int? ecReset = GetIntParam(headers, "X-Esi-Error-Limit-Reset");
 			if (ecReset != null)
 				errorCountRefresh = received.AddSeconds(Math.Min((int)ecReset, 120));
-			GetIntParam(headers, "X-Pages");
 			var status = ToEsiStatusCode(response.StatusCode);
+			int pages = GetIntParam(headers, "X-Pages") ?? 0;
+			if (pages < 1) pages = 1;
 			if (status == EsiResultStatus.OK)
 				try {
 					// Parse the ESI payload, content should not be null if response was OK
@@ -183,7 +184,8 @@ namespace EVEMon.Common.Esi {
 						// JSON parsing
 						result = new EsiResult<T>(status, serializer.Deserialize<T>(jr)) {
 							CacheInfo = new EsiCacheInfo(headers.ETag?.Tag, content.Headers.
-								Expires?.UtcDateTime ?? received)
+								Expires?.UtcDateTime ?? received),
+							Pages = pages
 						};
 						// Determine date and time on the server, no more laggy NIST time sync
 						var serverDate = headers.Date;
