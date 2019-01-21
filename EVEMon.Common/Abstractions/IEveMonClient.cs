@@ -1,6 +1,5 @@
 ﻿using EVEMon.Common.Events;
 using EVEMon.Common.Models;
-using System;
 using System.Collections.Generic;
 
 namespace EVEMon.Common.Abstractions {
@@ -25,8 +24,13 @@ namespace EVEMon.Common.Abstractions {
 		IEveMonNotifications Notifications { get; }
 
 		/// <summary>
-		/// The static data loaded from file. Additional static data instances may be created
-		/// during execution.
+		/// Retrieves the ESI request handler.
+		/// </summary>
+		Esi.EsiRequestHandler RequestHandler { get; }
+
+		/// <summary>
+		/// Retrieves the static data loaded from file. Additional static data instances may
+		/// be created during execution.
 		/// </summary>
 		IStaticData StaticData { get; }
 	}

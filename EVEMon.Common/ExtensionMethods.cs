@@ -294,7 +294,19 @@ namespace EVEMon.Common {
 				throw new ArgumentNullException(paramName, message ?? "Value cannot be null.");
 		}
 
+		/// <summary>
+		/// Gets the attribute value attached to an enumeration value.
+		/// </summary>
+		/// <typeparam name="T">The attribute type to be retrieved.</typeparam>
+		/// <param name="enumVal">The enumeration value which has the attribute.</param>
+		/// <returns>The attribute value, or null if no such attribute value is attached.</returns>
+		public static T GetAttributeOfType<T>(this Enum enumVal) where T : Attribute {
+			var member = enumVal.GetType().GetMember(enumVal.ToString());
+			var attributes = member[0].GetCustomAttributes(typeof(T), false);
+			return (attributes.Length > 0) ? (T)attributes[0] : null;
+		}
+
 		#endregion
-		
+
 	}
 }

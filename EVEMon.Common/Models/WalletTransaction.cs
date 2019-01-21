@@ -70,7 +70,7 @@ namespace EVEMon.Common.Models {
 		/// <summary>
 		/// The corporation who received the tax.
 		/// </summary>
-		public Corporation TaxReceiver { get; }
+		public CorporationBase TaxReceiver { get; }
 
 		/// <summary>
 		/// The type of this transaction.

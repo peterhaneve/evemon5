@@ -150,7 +150,7 @@ namespace EVEMon.Common.Events {
 		/// </summary>
 		/// <param name="character">The character which was changed.</param>
 		public void FireCharacterAssets(Character character) {
-			OnCharacterAttributes?.Invoke(this, new CharacterEventArgs(character));
+			OnCharacterAssets?.Invoke(this, new CharacterEventArgs(character));
 		}
 
 		/// <summary>

@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using EVEMon.Common;
 using EVEMon.Common.Esi;
+using EVEMon.Common.Esi.RequestObjects;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
@@ -17,15 +17,17 @@ namespace EVEMon.Tests {
 		}
 
 		private async Task TestPublicContractsAsync() {
-			await Task.Delay(5000);
 			using (var handler = new EsiRequestHandler()) {
 				handler.ConfigureServicePoints();
+				var headers = new EsiRequestHeaders(EsiEndpoints.ContractsPublic) {
+					Path = "10000002"
+				};
 				var result = await handler.QueryEsiGetAsync<Collection<
-					Get_contracts_public_region_id_200_ok>>("https://" + Constants.ESI_BASE +
-					"/v1/contracts/public/10000002/");
+					Get_contracts_public_region_id_200_ok>>(headers);
 				Assert.IsNotNull(result);
-				Assert.Equals(result.Status, EsiResultStatus.OK);
+				Assert.AreEqual(result.Status, EsiResultStatus.OK);
 				Assert.IsNotNull(result.Result);
+				Assert.AreNotEqual(0, result.Result.Count);
 			}
 		}
 	}

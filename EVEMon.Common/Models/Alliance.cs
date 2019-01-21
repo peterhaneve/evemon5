@@ -14,18 +14,12 @@ namespace EVEMon.Common.Models {
 		/// The alliance name.
 		/// </summary>
 		public string Name { get; }
-
-		/// <summary>
-		/// The alliance ticker.
-		/// </summary>
-		public string Ticker { get; }
-
-		public Alliance(long id, string name, string ticker) {
+		
+		public Alliance(long id, string name) {
 			if (string.IsNullOrEmpty(name))
 				throw new ArgumentNullException("name");
 			ID = id;
 			Name = name;
-			Ticker = ticker ?? string.Empty;
 		}
 
 		public override bool Equals(object obj) {
@@ -37,7 +31,7 @@ namespace EVEMon.Common.Models {
 		}
 
 		public override string ToString() {
-			return string.Format("{0} <{1}>", Name, Ticker);
+			return Name;
 		}
 	}
 }

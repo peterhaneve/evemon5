@@ -19,7 +19,7 @@ namespace EVEMon.Common.Abstractions {
 		/// </summary>
 		/// <param name="id">The corporation ID.</param>
 		/// <returns>The matching NPC corporation, or null if no corporation with this ID is present in the static data.</returns>
-		Corporation GetNPCCorpByID(long id);
+		CorporationBase GetNPCCorpByID(long id);
 
 		/// <summary>
 		/// Retrieves a planet by its ID.

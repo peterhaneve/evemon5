@@ -1,6 +1,6 @@
-﻿using EVEMon.Common.Models;
+﻿using EVEMon.Common.Esi.RequestObjects;
+using EVEMon.Common.Models;
 using System;
-using System.Collections.Generic;
 
 namespace EVEMon.Common.Esi {
 	/// <summary>

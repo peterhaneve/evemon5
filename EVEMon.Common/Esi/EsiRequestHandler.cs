@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -97,15 +98,20 @@ namespace EVEMon.Common.Esi {
 		/// When the error count is refreshed.
 		/// </summary>
 		private DateTime errorCountRefresh;
-		
+
 		/// <summary>
 		/// Returns true if the ESI error count has been exceeded.
 		/// </summary>
 		public bool IsErrorCountExceeded {
 			get {
-				return errorCount >= ERROR_THRESHOLD || errorCountRefresh < DateTime.UtcNow;
+				return errorCount >= ERROR_THRESHOLD && errorCountRefresh >= DateTime.UtcNow;
 			}
 		}
+
+		/// <summary>
+		/// The language to request.
+		/// </summary>
+		public EsiLanguage Language { get; set; }
 
 		/// <summary>
 		/// Gets or sets the HTTP timeout.
@@ -122,10 +128,9 @@ namespace EVEMon.Common.Esi {
 
 		public EsiRequestHandler(WebProxy proxy = null) {
 			var handler = new HttpClientHandler() {
-				AllowAutoRedirect = true,
-				AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
-				MaxAutomaticRedirections = 3,
-				UseCookies = false, UseProxy = (proxy != null)
+				AllowAutoRedirect = true, AutomaticDecompression = DecompressionMethods.
+					Deflate | DecompressionMethods.GZip,
+				MaxAutomaticRedirections = 3, UseCookies = false, UseProxy = (proxy != null)
 			};
 			if (proxy != null)
 				handler.Proxy = proxy;
@@ -136,8 +141,8 @@ namespace EVEMon.Common.Esi {
 			var headers = client.DefaultRequestHeaders;
 			headers.AcceptEncoding.TryParseAdd("gzip,deflate;q=0.8");
 			headers.AcceptCharset.TryParseAdd("ISO-8859-1,utf-8;q=0.8,*;q=0.7");
-			headers.AcceptLanguage.TryParseAdd("en-us,en;q=0.5");
-			headers.UserAgent.TryParseAdd(Constants.USER_AGENT);
+			headers.Add("User-Agent", Constants.USER_AGENT);
+			Language = EsiLanguage.English;
 		}
 
 		/// <summary>
@@ -214,7 +219,6 @@ namespace EVEMon.Common.Esi {
 		/// <returns>The data from the ESI request.</returns>
 		private async Task<EsiResult<T>> QueryEsiAsync<T>(HttpRequestMessage request,
 				EsiCacheInfo cachedInfo = null) {
-			request.ThrowIfNull(nameof(request));
 			var headers = request.Headers;
 			EsiResult<T> esiResult;
 			headers.ThrowIfNull(nameof(headers));
@@ -230,62 +234,62 @@ namespace EVEMon.Common.Esi {
 		/// Queries ESI to send a DELETE request.
 		/// </summary>
 		/// <typeparam name="T">The type of the response.</typeparam>
-		/// <param name="url">The full URL.</param>
-		/// <param name="cachedInfo">The cache information from the previous request (if any).</param>
+		/// <param name="request">The ESI request to make.</param>
 		/// <returns>The data from the ESI request.</returns>
-		public Task<EsiResult<T>> QueryEsiDeleteAsync<T>(string url, EsiCacheInfo cachedInfo =
-				null) {
-			if (string.IsNullOrEmpty(url))
-				throw new ArgumentNullException("url");
-			return QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Delete, url), cachedInfo);
+		public async Task<EsiResult<T>> QueryEsiDeleteAsync<T>(EsiRequestHeaders request) {
+			request.ThrowIfNull(nameof(request));
+			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Delete,
+				await request.GetESIUrlAsync(Language)), request.CacheInfo);
 		}
 
 		/// <summary>
 		/// Queries ESI for GET response data.
 		/// </summary>
 		/// <typeparam name="T">The type of the response.</typeparam>
-		/// <param name="url">The full URL including query string.</param>
-		/// <param name="cachedInfo">The cache information from the previous request (if any).</param>
+		/// <param name="request">The ESI request to make.</param>
 		/// <returns>The data from the ESI request.</returns>
-		public Task<EsiResult<T>> QueryEsiGetAsync<T>(string url, EsiCacheInfo cachedInfo =
-				null) {
-			if (string.IsNullOrEmpty(url))
-				throw new ArgumentNullException("url");
-			return QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Get, url), cachedInfo);
+		public async Task<EsiResult<T>> QueryEsiGetAsync<T>(EsiRequestHeaders request) {
+			request.ThrowIfNull(nameof(request));
+			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Get,
+				await request.GetESIUrlAsync(Language)), request.CacheInfo);
 		}
 
 		/// <summary>
 		/// Queries ESI for POST response data.
 		/// </summary>
 		/// <typeparam name="T">The type of the response.</typeparam>
-		/// <param name="url">The full URL.</param>
-		/// <param name="data">The POST data to be included in the request.</param>
-		/// <param name="cachedInfo">The cache information from the previous request (if any).</param>
+		/// <param name="request">The ESI request to make.</param>
+		/// <param name="content">The POST data to be included in the request.</param>
 		/// <returns>The data from the ESI request.</returns>
-		public Task<EsiResult<T>> QueryEsiPostAsync<T>(string url,
-				IDictionary<string, string> data, EsiCacheInfo cachedInfo = null) {
-			if (string.IsNullOrEmpty(url))
-				throw new ArgumentNullException("url");
-			return QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Post, url) {
-				Content = new FormUrlEncodedContent(data)
-			}, cachedInfo);
+		public async Task<EsiResult<T>> QueryEsiPostAsync<T>(EsiRequestHeaders request,
+				HttpContent content) {
+			request.ThrowIfNull(nameof(request));
+			content.ThrowIfNull(nameof(content));
+			string contentType = request.ContentType.GetAttributeOfType<DescriptionAttribute>()?.
+				Description;
+			if (contentType != null)
+				content.Headers.ContentType.MediaType = contentType;
+			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Post, await request.
+					GetESIUrlAsync(Language)) {
+				Content = content
+			}, request.CacheInfo);
 		}
 
 		/// <summary>
 		/// Queries ESI to PUT new data.
 		/// </summary>
 		/// <typeparam name="T">The type of the response.</typeparam>
-		/// <param name="url">The full URL.</param>
+		/// <param name="request">The ESI request to make.</param>
 		/// <param name="data">The POST data to be included in the request.</param>
-		/// <param name="cachedInfo">The cache information from the previous request (if any).</param>
 		/// <returns>The data from the ESI request.</returns>
-		public Task<EsiResult<T>> QueryEsiPutAsync<T>(string url, HttpContent content,
-				EsiCacheInfo cachedInfo = null) {
-			if (string.IsNullOrEmpty(url))
-				throw new ArgumentNullException("url");
-			return QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Put, url) {
+		public async Task<EsiResult<T>> QueryEsiPutAsync<T>(EsiRequestHeaders request,
+				HttpContent content) {
+			request.ThrowIfNull(nameof(request));
+			content.ThrowIfNull(nameof(content));
+			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Put, await request.
+					GetESIUrlAsync(Language)) {
 				Content = content
-			}, cachedInfo);
+			}, request.CacheInfo);
 		}
 
 		#region IDisposable Support

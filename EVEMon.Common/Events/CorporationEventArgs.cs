@@ -9,9 +9,9 @@ namespace EVEMon.Common.Events {
 		/// <summary>
 		/// The corporation affected by this event.
 		/// </summary>
-		public Corporation Corporation { get; }
+		public CorporationBase Corporation { get; }
 
-		public CorporationEventArgs(Corporation corp) {
+		public CorporationEventArgs(CorporationBase corp) {
 			corp.ThrowIfNull(nameof(corp));
 			Corporation = corp;
 		}

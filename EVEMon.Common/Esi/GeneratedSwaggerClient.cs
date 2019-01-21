@@ -4,7 +4,7 @@
 // </auto-generated>
 //----------------------
 
-namespace EVEMon.Common.Esi
+namespace EVEMon.Common.Esi.RequestObjects
 {
     #pragma warning disable
 
@@ -160,7 +160,7 @@ namespace EVEMon.Common.Esi
         /// <summary>Hexadecimal string representing label color, in RGB format</summary>
         [Newtonsoft.Json.JsonProperty("color", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public LabelColor? Color { get; set; } = EVEMon.Common.Esi.LabelColor._ffffff;
+        public LabelColor? Color { get; set; } = EVEMon.Common.Esi.RequestObjects.LabelColor._ffffff;
 
         /// <summary>name string</summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
@@ -10374,7 +10374,7 @@ namespace EVEMon.Common.Esi
         /// <summary>color string</summary>
         [Newtonsoft.Json.JsonProperty("color", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public Get_characters_character_id_mail_labels_labelColor? Color { get; set; } = EVEMon.Common.Esi.Get_characters_character_id_mail_labels_labelColor._ffffff;
+        public Get_characters_character_id_mail_labels_labelColor? Color { get; set; } = EVEMon.Common.Esi.RequestObjects.Get_characters_character_id_mail_labels_labelColor._ffffff;
 
         /// <summary>label_id integer</summary>
         [Newtonsoft.Json.JsonProperty("label_id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]

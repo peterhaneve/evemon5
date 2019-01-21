@@ -51,7 +51,7 @@
       "wrapResponseMethods": [],
       "generateResponseClasses": true,
       "responseClass": "SwaggerResponse",
-      "namespace": "EVEMon.Common.Esi",
+      "namespace": "EVEMon.Common.Esi.RequestObjects",
       "requiredPropertiesMustBeDefined": true,
       "dateType": "System.DateTime",
       "jsonConverters": null,
