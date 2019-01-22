@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EVEMon.Common.Utility;
+using System;
 
 namespace EVEMon.Common.Models {
 	/// <summary>

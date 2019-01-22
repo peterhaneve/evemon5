@@ -3,7 +3,9 @@
 namespace EVEMon.Common.Abstractions {
 	/// <summary>
 	/// Describes the method for EVEMon to send notifications to the user, along with logging
-	/// and exception handling.
+	/// and exception handling. Although some UI frameworks are single-threaded, these
+	/// functions might be used from any thread. Therefore, posting may be necessary to avoid
+	/// threading conflicts.
 	/// </summary>
 	public interface IEveMonNotifications {
 		/// <summary>

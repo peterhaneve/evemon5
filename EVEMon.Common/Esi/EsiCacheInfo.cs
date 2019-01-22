@@ -35,6 +35,7 @@ namespace EVEMon.Common.Esi {
 		/// </summary>
 		/// <param name="headers">The headers where the data should be added.</param>
 		public void AddRequestHeaders(HttpRequestHeaders headers) {
+			headers.ThrowIfNull(nameof(headers));
 			headers.IfModifiedSince = Expires;
 			if (!string.IsNullOrEmpty(ETag))
 				headers.IfNoneMatch.TryParseAdd(ETag);

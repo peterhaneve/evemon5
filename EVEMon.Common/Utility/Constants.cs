@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EVEMon.Common {
+namespace EVEMon.Common.Utility {
 	/// <summary>
 	/// Constants used throughout EVEMon 5.
 	/// </summary>

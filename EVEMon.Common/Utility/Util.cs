@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace EVEMon.Common {
+namespace EVEMon.Common.Utility {
 	/// <summary>
 	/// Utilities used in multiple locations throughout EVEMon 5.
 	/// </summary>

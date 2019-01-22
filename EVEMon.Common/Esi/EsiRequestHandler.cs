@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using EVEMon.Common.Utility;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -22,10 +23,9 @@ namespace EVEMon.Common.Esi {
 		/// <returns>The value of that header as an integer, or null if the header is missing
 		/// or in a non-integer format.</returns>
 		private static int? GetIntParam(HttpResponseHeaders headers, string name) {
-			IEnumerable<string> values;
 			int? ret = null;
 			// If values are available, try to parse as integer, use the last one
-			if (headers.TryGetValues(name, out values))
+			if (headers.TryGetValues(name, out IEnumerable<string> values))
 				foreach (string value in values) {
 					if (value.Trim().TryParseInvariant(out int intVal) && intVal >= 0)
 						ret = intVal;
@@ -201,9 +201,6 @@ namespace EVEMon.Common.Esi {
 				} catch (JsonException e) {
 					// JSON parse failures become EsiResultStatus.Error
 					result = new EsiResult<T>(EsiResultStatus.Error, default(T), e);
-				} catch (IOException e) {
-					// I/O errors become EsiResultStatus.Error
-					result = new EsiResult<T>(EsiResultStatus.Error, default(T), e);
 				}
 			else
 				result = new EsiResult<T>(status);
@@ -214,18 +211,38 @@ namespace EVEMon.Common.Esi {
 		/// Queries ESI to send a request.
 		/// </summary>
 		/// <typeparam name="T">The type of the response.</typeparam>
-		/// <param name="request">The request to send.</param>
-		/// <param name="cachedInfo">The cache information from the previous request (if any).</param>
+		/// <param name="method">The HTTP method to use when making the request.</param>
+		/// <param name="request">The ESI request to make.</param>
+		/// <param name="content">The content to send with the request.</param>
 		/// <returns>The data from the ESI request.</returns>
-		private async Task<EsiResult<T>> QueryEsiAsync<T>(HttpRequestMessage request,
-				EsiCacheInfo cachedInfo = null) {
-			var headers = request.Headers;
+		private async Task<EsiResult<T>> QueryEsiAsync<T>(HttpMethod method,
+				EsiRequestHeaders request, HttpContent content = null) {
+			string url = await request.GetESIUrlAsync(Language).ConfigureAwait(false);
+			var message = new HttpRequestMessage(method, url);
+			if (content != null) {
+				// Update content type if requested
+				string contentType = request.ContentType.GetAttributeOfType<
+					DescriptionAttribute>()?.Description;
+				if (contentType != null && content.Headers != null)
+					content.Headers.ContentType.MediaType = contentType;
+				message.Content = content;
+			}
 			EsiResult<T> esiResult;
-			headers.ThrowIfNull(nameof(headers));
 			// If previous request expiration is available, add ETag/If-Modified-Since
-			cachedInfo?.AddRequestHeaders(headers);
-			using (var response = await client.SendAsync(request).ConfigureAwait(false)) {
-				esiResult = await HandleResponseAsync<T>(response);
+			request.CacheInfo?.AddRequestHeaders(message.Headers);
+			try {
+				using (var response = await client.SendAsync(message).ConfigureAwait(false)) {
+					esiResult = await HandleResponseAsync<T>(response);
+				}
+			} catch (IOException e) {
+				// I/O errors become EsiResultStatus.NetworkError
+				esiResult = new EsiResult<T>(EsiResultStatus.NetworkError, default(T), e);
+			} catch (TimeoutException e) {
+				// Time outs become EsiResultStatus.NetworkError
+				esiResult = new EsiResult<T>(EsiResultStatus.NetworkError, default(T), e);
+			} catch (OperationCanceledException e) {
+				// Cancellations become EsiResultStatus.NetworkError
+				esiResult = new EsiResult<T>(EsiResultStatus.NetworkError, default(T), e);
 			}
 			return esiResult;
 		}
@@ -238,8 +255,7 @@ namespace EVEMon.Common.Esi {
 		/// <returns>The data from the ESI request.</returns>
 		public async Task<EsiResult<T>> QueryEsiDeleteAsync<T>(EsiRequestHeaders request) {
 			request.ThrowIfNull(nameof(request));
-			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Delete,
-				await request.GetESIUrlAsync(Language)), request.CacheInfo);
+			return await QueryEsiAsync<T>(HttpMethod.Delete, request).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -250,8 +266,7 @@ namespace EVEMon.Common.Esi {
 		/// <returns>The data from the ESI request.</returns>
 		public async Task<EsiResult<T>> QueryEsiGetAsync<T>(EsiRequestHeaders request) {
 			request.ThrowIfNull(nameof(request));
-			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Get,
-				await request.GetESIUrlAsync(Language)), request.CacheInfo);
+			return await QueryEsiAsync<T>(HttpMethod.Get, request).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -265,14 +280,8 @@ namespace EVEMon.Common.Esi {
 				HttpContent content) {
 			request.ThrowIfNull(nameof(request));
 			content.ThrowIfNull(nameof(content));
-			string contentType = request.ContentType.GetAttributeOfType<DescriptionAttribute>()?.
-				Description;
-			if (contentType != null)
-				content.Headers.ContentType.MediaType = contentType;
-			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Post, await request.
-					GetESIUrlAsync(Language)) {
-				Content = content
-			}, request.CacheInfo);
+			return await QueryEsiAsync<T>(HttpMethod.Post, request, content).ConfigureAwait(
+				false);
 		}
 
 		/// <summary>
@@ -286,27 +295,19 @@ namespace EVEMon.Common.Esi {
 				HttpContent content) {
 			request.ThrowIfNull(nameof(request));
 			content.ThrowIfNull(nameof(content));
-			return await QueryEsiAsync<T>(new HttpRequestMessage(HttpMethod.Put, await request.
-					GetESIUrlAsync(Language)) {
-				Content = content
-			}, request.CacheInfo);
+			return await QueryEsiAsync<T>(HttpMethod.Put, request, content).ConfigureAwait(
+				false);
 		}
 
 		#region IDisposable Support
 		private bool disposedValue = false;
 
-		private void Dispose(bool disposing) {
+		public void Dispose() {
 			if (!disposedValue) {
-				if (disposing)
-					client.Dispose();
+				client.CancelPendingRequests();
+				client.Dispose();
 				disposedValue = true;
 			}
-		}
-
-		// This code added to correctly implement the disposable pattern.
-		public void Dispose() {
-			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-			Dispose(true);
 		}
 		#endregion
 	}

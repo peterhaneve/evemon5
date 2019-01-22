@@ -1,4 +1,5 @@
 ﻿using EVEMon.Common.StaticData;
+using EVEMon.Common.Utility;
 using System;
 
 namespace EVEMon.Common.Models {

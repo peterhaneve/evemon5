@@ -1,4 +1,5 @@
 ﻿using EVEMon.Common.Models;
+using EVEMon.Common.Utility;
 using System;
 using System.Collections.Generic;
 

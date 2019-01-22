@@ -451,6 +451,18 @@ namespace EVEMon.Common.Events {
 		}
 
 		/// <summary>
+		/// Fired when the ID to Name conversion for public characters is updated.
+		/// </summary>
+		public event EventHandler OnIDToName;
+
+		/// <summary>
+		/// Fires an ID to name update event.
+		/// </summary>
+		public void FireIDToName() {
+			OnIDToName?.Invoke(this, new EventArgs());
+		}
+
+		/// <summary>
 		/// Fired when the incursion status is updated.
 		/// </summary>
 		public event EventHandler OnIncursions;

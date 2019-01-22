@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace EVEMon.Common {
 	/// <summary>
@@ -276,6 +278,26 @@ namespace EVEMon.Common {
 		#endregion
 
 		#region DateTime
+
+		#endregion
+
+		#region WaitHandle
+
+		/// <summary>
+		/// An asynchronous version of WaitHandle.WaitOne.
+		/// </summary>
+		/// <param name="timeout">The maximum time to wait.</param>
+		/// <returns>true if the event was signaled, or false if the time out elapsed</returns>
+		public static Task<bool> WaitOneAsync(this WaitHandle handle, int timeout = Timeout.Infinite) {
+			var completion = new TaskCompletionSource<bool>();
+			// https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/interop-with-other-asynchronous-patterns-and-types#WHToTap
+			var registered = ThreadPool.RegisterWaitForSingleObject(handle,
+				delegate (object ignore, bool signaled) {
+					completion.SetResult(signaled);
+				}, null, timeout, true);
+			completion.Task.ContinueWith((ignore) => registered.Unregister(handle));
+			return completion.Task;
+		}
 
 		#endregion
 
