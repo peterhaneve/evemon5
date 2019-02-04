@@ -68,9 +68,9 @@ namespace EVEMon.Common.Models {
 		public decimal Tax { get; }
 
 		/// <summary>
-		/// The corporation who received the tax.
+		/// The corporation ID who received the tax.
 		/// </summary>
-		public CorporationBase TaxReceiver { get; }
+		public long TaxReceiverID { get; }
 
 		/// <summary>
 		/// The type of this transaction.
@@ -128,9 +128,9 @@ namespace EVEMon.Common.Models {
 		public Item Item { get; }
 
 		/// <summary>
-		/// The location where the transaction occurred.
+		/// The location ID where the transaction occurred.
 		/// </summary>
-		public Structure Location { get; }
+		public long LocationID { get; }
 
 		/// <summary>
 		/// The quantity transacted.
@@ -193,6 +193,6 @@ namespace EVEMon.Common.Models {
 		researching_time_productivity, resource_wars_reward, reverse_engineering,
 		security_processing_fee, shares, sovereignity_bill, store_purchase,
 		store_purchase_refund, transaction_tax, upkeep_adjustment_fee, war_ally_contract,
-		war_fee, war_fee_surrender
+		war_fee, war_fee_surrender, unknown
 	}
 }

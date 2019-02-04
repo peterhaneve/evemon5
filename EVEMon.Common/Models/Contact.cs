@@ -3,13 +3,20 @@ using System;
 
 namespace EVEMon.Common.Models {
 	/// <summary>
-	/// Represents an EVE contact in the address book.
+	/// Represents an EVE contact in the address book. As part of the EVEMon 5 unified contact
+	/// models, this object collects standings, loyalty, and address book information.
 	/// </summary>
 	public sealed class Contact {
 		/// <summary>
 		/// The ID of the contact.
 		/// </summary>
 		public long ContactID { get; }
+
+		/// <summary>
+		/// The number of loyalty points earned with this contact. Only applies to NPC
+		/// corporations and factions from the loyalty endpoint.
+		/// </summary>
+		public long Loyalty { get; }
 
 		/// <summary>
 		/// The source providing this contact.
@@ -20,6 +27,12 @@ namespace EVEMon.Common.Models {
 		/// The contact's standing.
 		/// </summary>
 		public double Standing { get; }
+
+		/// <summary>
+		/// The contact's standing towards you. This is only for NPC factions/agents/
+		/// corporations from the standings endpoint.
+		/// </summary>
+		public double TheirStanding { get; }
 
 		/// <summary>
 		/// The contact type.

@@ -8,11 +8,11 @@ namespace EVEMon.Common.Abstractions {
 	/// </summary>
 	public interface IStaticData {
 		/// <summary>
-		/// Retrieves an item by its ID.
+		/// Retrieves an item by its type ID.
 		/// </summary>
-		/// <param name="id">The item ID. Although it may use the "long" type it only works on packaged items.</param>
+		/// <param name="id">The item type ID.</param>
 		/// <returns>The matching item, or null if no item with this ID could be found.</returns>
-		Item GetItemByID(long id);
+		ItemType GetItemByID(int id);
 
 		/// <summary>
 		/// Retrieves an NPC (static) corporation by its ID.

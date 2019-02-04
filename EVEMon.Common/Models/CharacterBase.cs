@@ -7,14 +7,14 @@ namespace EVEMon.Common.Models {
 	/// </summary>
 	public class CharacterBase : IHasID, IHasName {
 		/// <summary>
-		/// The character's alliance. Can be null if the character is not in an alliance.
+		/// The character's alliance ID. Can be 0 if the character is not in an alliance.
 		/// </summary>
-		public Alliance Alliance { get; set; }
+		public long AllianceID { get; set; }
 
 		/// <summary>
-		/// The character's corporation.
+		/// The character's corporation ID.
 		/// </summary>
-		public CorporationBase Corporation { get; set; }
+		public long CorporationID { get; set; }
 
 		/// <summary>
 		/// The character ID in-game. May be zero for offline or local characters.

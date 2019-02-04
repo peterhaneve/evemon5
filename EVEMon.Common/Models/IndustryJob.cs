@@ -36,14 +36,14 @@ namespace EVEMon.Common.Models {
 		public long ID { get; }
 
 		/// <summary>
-		/// The character who installed this job.
+		/// The character ID who installed this job.
 		/// </summary>
-		public Character Installer { get; }
+		public long InstallerID { get; }
 
 		/// <summary>
 		/// The location where this job is running.
 		/// </summary>
-		public Structure JobLocation { get; }
+		public long JobLocationID { get; }
 
 		/// <summary>
 		/// The time when this industry job was paused.
@@ -72,8 +72,8 @@ namespace EVEMon.Common.Models {
 			Duration = factory.Duration;
 			EndDate = factory.EndDate;
 			ID = factory.ID;
-			Installer = factory.Installer;
-			JobLocation = factory.JobLocation;
+			InstallerID = factory.InstallerID;
+			JobLocationID = factory.JobLocationID;
 			PauseDate = factory.PauseDate;
 			Runs = factory.Runs;
 			Status = factory.Status;
@@ -89,7 +89,7 @@ namespace EVEMon.Common.Models {
 		}
 
 		public override string ToString() {
-			return "{0:D}x of {1} at {2}: {3}".F(Runs, Blueprint, JobLocation, Status);
+			return "{0:D}x of {1} at {2}: {3}".F(Runs, Blueprint, JobLocationID, Status);
 		}
 	}
 

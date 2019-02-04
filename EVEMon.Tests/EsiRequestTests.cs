@@ -32,23 +32,25 @@ namespace EVEMon.Tests {
 				var c0 = lookup.GetCharacter(0);
 				Assert.IsNotNull(c0);
 				Assert.AreEqual(0, c0.ID);
-				Assert.AreEqual(0, c0.Corporation.ID);
+				Assert.AreEqual(0, c0.CorporationID);
 				Assert.AreEqual(Constants.UNKNOWN_TEXT, c0.Name);
 				var testComplete = new AutoResetEvent(false);
-				mockClient.Events.OnIDToName += new EventHandler((sender, args) => {
+				var handler = new EventHandler((sender, args) => {
 					var testAlliance = lookup.GetAlliance(498125261);
 					var peterHan = lookup.GetCharacter(96325318);
 					Assert.IsNotNull(testAlliance);
 					Assert.IsNotNull(peterHan);
 					if (peterHan.Name == "Peter Han" && testAlliance.Name ==
-							"Test Alliance Please Ignore" && peterHan.Alliance.Equals(
-							testAlliance))
+							"Test Alliance Please Ignore" && peterHan.AllianceID ==
+							testAlliance.ID)
 						testComplete.Set();
 				});
+				mockClient.Events.OnIDToName += handler;
 				// Start these up
 				Assert.IsNotNull(lookup.GetAlliance(498125261));
 				Assert.IsNotNull(lookup.GetCharacter(96325318));
 				Assert.IsTrue(testComplete.WaitOne(2000));
+				mockClient.Events.OnIDToName -= handler;
 			}
 		}
 

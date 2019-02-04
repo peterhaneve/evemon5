@@ -13,8 +13,7 @@ using System.Threading.Tasks;
 namespace EVEMon.Common.Esi {
 	/// <summary>
 	/// Looks up character, alliance, and corporation entities from ESI. Note that the static
-	/// data should be consulted first to weed out NPC corporations and factions. Since the
-	/// ESI entities
+	/// data should be consulted first to weed out NPC corporations and factions.
 	/// 
 	/// This class is thread safe.
 	/// </summary>
@@ -29,53 +28,22 @@ namespace EVEMon.Common.Esi {
 		/// </summary>
 		private const int MAX_IDTONAME = 100;
 
-		private readonly ConcurrentQueue<int> affilQueue;
-		private readonly AutoResetEvent affilReady;
-		private IEveMonClient client;
-		private CancellationTokenSource dispose;
+		private readonly AbstractLookupService affil;
+		private readonly IEveMonClient client;
 		private readonly ConcurrentDictionary<int, Entity> entities;
-		private readonly ConcurrentQueue<int> nameQueue;
-		private readonly AutoResetEvent nameReady;
+		private readonly AbstractLookupService name;
 		private readonly TimeSpan refreshInterval;
 
 		public EntityLookupService(IEveMonClient client) {
 			client.ThrowIfNull(nameof(client));
 			this.client = client;
-			affilQueue = new ConcurrentQueue<int>();
-			affilReady = new AutoResetEvent(false);
 			entities = new ConcurrentDictionary<int, Entity>(4, 256);
 			entities.TryAdd(0, Entity.CreateUnknown(0));
-			nameQueue = new ConcurrentQueue<int>();
-			nameReady = new AutoResetEvent(false);
-			dispose = new CancellationTokenSource();
+			affil = new AffilLookupService(client, entities);
+			name = new NameLookupService(client, entities);
 			// Get refresh interval of the ID/name endpoints
 			refreshInterval = EsiEndpoints.UniverseNames.GetAttributeOfType<
 				EsiEndpointAttribute>()?.DefaultCache ?? TimeSpan.FromMinutes(30.0);
-		}
-
-		/// <summary>
-		/// Clears the ID to affiliation queue on a background task.
-		/// </summary>
-		private async Task AffiliationsUpdateTaskAsync() {
-			var toDo = new LinkedList<int>();
-			bool cleared = false;
-			do {
-				toDo.Clear();
-				// Dequeue all possible while max length not exceeded
-				while (affilQueue.TryDequeue(out int id) && toDo.Count < MAX_AFFILIATION)
-					toDo.AddLast(id);
-				if (toDo.Count < 1) {
-					if (cleared)
-						// Characters processed, update ID to name
-						client.Events.FireIDToName();
-					await affilReady.WaitOneAsync().ConfigureAwait(false);
-					cleared = false;
-				} else {
-					await RequestAffiliationsAsync(toDo).ConfigureAwait(false);
-					cleared = true;
-				}
-			} while (!dispose.IsCancellationRequested);
-			affilReady.Dispose();
 		}
 
 		/// <summary>
@@ -109,16 +77,15 @@ namespace EVEMon.Common.Esi {
 			var entity = GetEntity(id);
 			if (entity == null) {
 				chr = new CharacterBase(id, Constants.UNKNOWN_TEXT) {
-					Corporation = GetCorporation(0),
+					CorporationID = 0L,
 				};
 				QueueIDToName(id);
 				QueueAffiliation(id);
 			} else {
-				int alliance = entity.Alliance;
 				// Create character with affiliation information
 				chr = new CharacterBase(id, entity.Name) {
-					Corporation = GetCorporation(entity.Corporation),
-					Alliance = (alliance == 0) ? null : GetAlliance(alliance)
+					CorporationID = entity.Corporation,
+					AllianceID = entity.Alliance
 				};
 				if (entity.LastUpdate < DateTime.UtcNow - refreshInterval) {
 					QueueIDToName(id);
@@ -164,43 +131,17 @@ namespace EVEMon.Common.Esi {
 		/// Initializes and starts the tasks required to update entity names and affiliations.
 		/// </summary>
 		public void Initialize() {
-			Task.Run(AffiliationsUpdateTaskAsync);
-			Task.Run(NamesUpdateTaskAsync);
+			affil.Initialize();
+			name.Initialize();
 		}
-
-		/// <summary>
-		/// Clears the ID to name queue on a background task.
-		/// </summary>
-		private async Task NamesUpdateTaskAsync() {
-			var toDo = new LinkedList<int>();
-			bool cleared = false;
-			do {
-				toDo.Clear();
-				// Dequeue all possible while max length not exceeded
-				while (nameQueue.TryDequeue(out int id) && toDo.Count < MAX_IDTONAME)
-					toDo.AddLast(id);
-				if (toDo.Count < 1) {
-					if (cleared)
-						// Characters processed, update ID to name
-						client.Events.FireIDToName();
-					await nameReady.WaitOneAsync().ConfigureAwait(false);
-					cleared = false;
-				} else {
-					await RequestNamesAsync(toDo).ConfigureAwait(false);
-					cleared = true;
-				}
-			} while (!dispose.IsCancellationRequested);
-			nameReady.Dispose();
-		}
-
+		
 		/// <summary>
 		/// Queues up an ID into the affiliation list if it is not already in the list. Starts
 		/// the background task if necessary.
 		/// </summary>
 		/// <param name="id">The ID to resolve to a name.</param>
 		private void QueueAffiliation(int id) {
-			affilQueue.Enqueue(id);
-			affilReady.Set();
+			affil.Queue(id);
 		}
 
 		/// <summary>
@@ -209,92 +150,127 @@ namespace EVEMon.Common.Esi {
 		/// </summary>
 		/// <param name="id">The ID to resolve to a name.</param>
 		private void QueueIDToName(int id) {
-			nameQueue.Enqueue(id);
-			nameReady.Set();
+			name.Queue(id);
 		}
-
-		/// <summary>
-		/// Makes an ESI request to resolve the specified character affiliations and adds them
-		/// to the cache.
-		/// </summary>
-		/// <param name="ids">The IDs to look up.</param>
-		private async Task RequestAffiliationsAsync(IEnumerable<int> ids) {
-			string idList = "[" + string.Join(",", new SortedSet<int>(ids)) + "]";
-			// Make the request
-			var names = await client.RequestHandler.QueryEsiPostAsync<Collection<RequestObjects.
-				Post_characters_affiliation_200_ok>>(new EsiRequestHeaders(EsiEndpoints.
-				CharactersAffiliation) {
-					// No cache info on these requests since the IDs will be different
-					ContentType = EsiContentType.Json
-				}, new StringContent(idList)).ConfigureAwait(false);
-			// If successful
-			if (names != null && names.Status == EsiResultStatus.OK)
-				foreach (var info in names.Result) {
-					int all = info.Alliance_id ?? 0, corp = info.Corporation_id, chr = info.
-						Character_id;
-					// Update affiliation of all entities that matched
-					entities.AddOrUpdate(chr, new Entity(chr, Constants.UNKNOWN_TEXT, corp,
-						all), (cid, old) => {
-							return new Entity(chr, old.Name, corp, all);
-						});
-				}
-			else
-				client.Notifications.NotifyError(Messages.ErrorIDToAffliation);
-		}
-
-		/// <summary>
-		/// Makes an ESI request to resolve the specified names and adds them to the cache.
-		/// </summary>
-		/// <param name="ids">The IDs to resolve.</param>
-		private async Task RequestNamesAsync(IEnumerable<int> ids) {
-			string idList = "[" + string.Join(",", new SortedSet<int>(ids)) + "]";
-			// Make the request, names are not localizable and will always be pulled from TQ
-			var names = await client.RequestHandler.QueryEsiPostAsync<Collection<RequestObjects.
-				Post_universe_names_200_ok>>(new EsiRequestHeaders(EsiEndpoints.UniverseNames)
-				{
-					// No cache info on these requests since the IDs will be different
-					ContentType = EsiContentType.Json
-				}, new StringContent(idList)).ConfigureAwait(false);
-			// If successful
-			if (names != null && names.Status == EsiResultStatus.OK)
-				foreach (var info in names.Result) {
-					int id = info.Id;
-					string name = info.Name;
-					switch (info.Category) {
-					case RequestObjects.Post_universe_names_200_okCategory.Alliance:
-						entities.TryAdd(id, Entity.CreateAlliance(id, name));
-						break;
-					case RequestObjects.Post_universe_names_200_okCategory.Character:
-						entities.AddOrUpdate(id, new Entity(id, name, 0, 0), (cid, old) => {
-							return new Entity(id, name, old.Corporation, old.Alliance);
-						});
-						break;
-					case RequestObjects.Post_universe_names_200_okCategory.Corporation:
-						entities.TryAdd(id, Entity.CreateCorporation(id, name));
-						break;
-					default:
-						// Other types are not handled here
-						entities.TryAdd(id, Entity.CreateUnknown(id));
-						break;
-					}
-				}
-			else
-				client.Notifications.NotifyError(Messages.ErrorIDToName);
-		}
-
+		
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 		
 		// This code added to correctly implement the disposable pattern.
 		public void Dispose() {
 			if (!disposedValue) {
-				nameReady.Set();
-				affilReady.Set();
-				dispose.Cancel();
+				name.Dispose();
+				affil.Dispose();
 				disposedValue = true;
 			}
 		}
 		#endregion
+
+		/// <summary>
+		/// Looks up character affiliations.
+		/// </summary>
+		private sealed class AffilLookupService : AbstractLookupService {
+			protected override int MaxLength => MAX_AFFILIATION;
+
+			private readonly IEveMonClient client;
+			private readonly ConcurrentDictionary<int, Entity> entities;
+
+			public AffilLookupService(IEveMonClient client, ConcurrentDictionary<int, Entity>
+					entities) {
+				this.client = client;
+				this.entities = entities;
+			}
+
+			protected override void FireEvent() {
+				client.Events.FireIDToName();
+			}
+
+			protected override async Task RequestAsync(IEnumerable<int> ids) {
+				string idList = "[" + string.Join(",", new SortedSet<int>(ids)) + "]";
+				EsiResult<Collection<RequestObjects.Post_characters_affiliation_200_ok>> affil;
+				// Make the request
+				using (var content = new StringContent(idList)) {
+					affil = await client.RequestHandler.QueryEsiPostAsync<Collection<
+						RequestObjects.Post_characters_affiliation_200_ok>>(
+						new EsiRequestHeaders(EsiEndpoints.CharactersAffiliation) {
+							// No cache info on these requests since the IDs will be different
+							ContentType = EsiContentType.Json
+						}, content).ConfigureAwait(false);
+				}
+				// If successful
+				if (affil != null && affil.Status == EsiResultStatus.OK)
+					foreach (var info in affil.Result) {
+						int all = info.Alliance_id ?? 0, corp = info.Corporation_id, chr =
+							info.Character_id;
+						// Update affiliation of all entities that matched
+						entities.AddOrUpdate(chr, new Entity(chr, Constants.UNKNOWN_TEXT, corp,
+							all), (cid, old) => {
+								return new Entity(chr, old.Name, corp, all);
+							});
+					}
+				else
+					client.Notifications.NotifyError(Messages.ErrorIDToAffliation);
+			}
+		}
+		
+		/// <summary>
+		/// Looks up entity IDs and names.
+		/// </summary>
+		private sealed class NameLookupService : AbstractLookupService {
+			protected override int MaxLength => MAX_IDTONAME;
+
+			private readonly IEveMonClient client;
+			private readonly ConcurrentDictionary<int, Entity> entities;
+
+			public NameLookupService(IEveMonClient client, ConcurrentDictionary<int, Entity>
+					entities) {
+				this.client = client;
+				this.entities = entities;
+			}
+
+			protected override void FireEvent() {
+				client.Events.FireIDToName();
+			}
+
+			protected override async Task RequestAsync(IEnumerable<int> ids) {
+				string idList = "[" + string.Join(",", new SortedSet<int>(ids)) + "]";
+				EsiResult<Collection<RequestObjects.Post_universe_names_200_ok>> names;
+				// Make the request, names are not localizable and will always be from TQ
+				using (var content = new StringContent(idList)) {
+					names = await client.RequestHandler.QueryEsiPostAsync<Collection<
+						RequestObjects.Post_universe_names_200_ok>>(new EsiRequestHeaders(
+						EsiEndpoints.UniverseNames) {
+							// No cache info on these requests since the IDs will be different
+							ContentType = EsiContentType.Json
+						}, content).ConfigureAwait(false);
+				}
+				// If successful
+				if (names != null && names.Status == EsiResultStatus.OK)
+					foreach (var info in names.Result) {
+						int id = info.Id;
+						string name = info.Name;
+						switch (info.Category) {
+						case RequestObjects.Post_universe_names_200_okCategory.Alliance:
+							entities.TryAdd(id, Entity.CreateAlliance(id, name));
+							break;
+						case RequestObjects.Post_universe_names_200_okCategory.Character:
+							entities.AddOrUpdate(id, new Entity(id, name, 0, 0), (cid, old) => {
+								return new Entity(id, name, old.Corporation, old.Alliance);
+							});
+							break;
+						case RequestObjects.Post_universe_names_200_okCategory.Corporation:
+							entities.TryAdd(id, Entity.CreateCorporation(id, name));
+							break;
+						default:
+							// Other types are not handled here
+							entities.TryAdd(id, Entity.CreateUnknown(id));
+							break;
+						}
+					}
+				else
+					client.Notifications.NotifyError(Messages.ErrorIDToName);
+			}
+		}
 
 		/// <summary>
 		/// A class which does double duty as character affiliation storage and alliance/corp
